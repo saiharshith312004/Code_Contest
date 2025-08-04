@@ -2,8 +2,10 @@ package com.onboarding.customer_onboarding.kyc.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import java.util.Base64;
 
 @Component
 public class JwtUtil {
@@ -11,10 +13,20 @@ public class JwtUtil {
     private String jwtSecret;
 
     public Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .setSigningKey(jwtSecret.getBytes())
-                .parseClaimsJws(token.replace("Bearer ", ""))
-                .getBody();
+        try {
+            // Decode the base64 secret and create a proper signing key
+            byte[] decodedKey = Base64.getDecoder().decode(jwtSecret);
+            
+            return Jwts.parserBuilder()
+                    .setSigningKey(Keys.hmacShaKeyFor(decodedKey))
+                    .build()
+                    .parseClaimsJws(token.replace("Bearer ", ""))
+                    .getBody();
+        } catch (Exception e) {
+            System.err.println("Error extracting JWT claims: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     public String extractUsername(String token) {
