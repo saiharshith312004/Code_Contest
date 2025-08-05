@@ -3,7 +3,7 @@ package com.onboarding.customer_onboarding.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "kyc_customers")
+@Table(name = "CUSTOMERS")
 public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
