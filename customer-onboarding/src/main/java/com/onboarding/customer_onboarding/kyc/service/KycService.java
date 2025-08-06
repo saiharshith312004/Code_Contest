@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+
 @Service
 @Slf4j
 public class KycService {
@@ -27,6 +28,7 @@ public class KycService {
     private CustomerRepository customerRepo;
     @Autowired
     private KycVerificationRepository kycVerificationRepo;
+
 
     public void uploadDocument(Long customerId, MultipartFile file, String docType) throws IOException {
         KycDocument doc = new KycDocument();
@@ -124,11 +126,15 @@ public class KycService {
             .allMatch(doc -> doc.getStatus() != null && "VERIFIED".equalsIgnoreCase(doc.getStatus()));
         
         // Update customer status
-        customer.setKycStatus(allVerified ? "ACCEPTED" : "PENDING");
+        String newStatus = allVerified ? "ACCEPTED" : "PENDING";
+        String oldStatus = customer.getKycStatus();
+        customer.setKycStatus(newStatus);
         customerRepo.save(customer);
         
         // Log the status update
-        log.info("Updated KYC status for customer {} to {}", customerId, customer.getKycStatus());
+        log.info("Updated KYC status for customer {} from {} to {}", customerId, oldStatus, newStatus);
+        
+        // Status updated successfully
     }
 
     /**

@@ -3,6 +3,8 @@ import com.onboarding.authservice.dto.JwtRequest;
 import com.onboarding.authservice.dto.JwtResponse;
 import com.onboarding.authservice.dto.RegisterRequest;
 import com.onboarding.authservice.model.AuditLog;
+import com.warrenstrange.googleauth.GoogleAuthenticator;
+import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import com.onboarding.authservice.model.Customer;
 import com.onboarding.authservice.model.User;
 import com.onboarding.authservice.repository.AuditLogRepository;
@@ -27,22 +29,41 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
-    
+
     @Autowired
     private CustomerRepository customerRepository1;
     @Override
     public List<Customer> getAllCustomers() {
-    	return customerRepository.findAll();
+        return customerRepository.findAll();
     }
-    
+
     @Override
     public JwtResponse login(JwtRequest request) {
+        // 1. Authenticate username/password
         authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
+
+        // 2. Retrieve the user
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("Invalid username"));
-        String token = jwtUtil.generateToken(user.getUsername(),user.getRole(),user.getUserId());
+
+        // 3. Validate 2FA code using stored secret
+        if (user.getTwoFaSecret() == null) {
+            throw new RuntimeException("2FA not configured for this user");
+        }
+
+        com.warrenstrange.googleauth.GoogleAuthenticator gAuth = new com.warrenstrange.googleauth.GoogleAuthenticator();
+        boolean isCodeValid = gAuth.authorize(user.getTwoFaSecret(), Integer.parseInt(request.getCode()));
+
+        if (!isCodeValid) {
+            throw new RuntimeException("Invalid 2FA code");
+        }
+
+        // 4. Generate JWT token
+        String token = jwtUtil.generateToken(user.getUsername(), user.getRole(), user.getUserId());
+
+        // 5. Log audit
         AuditLog log = AuditLog.builder()
                 .userId(user.getUserId())
                 .action("LOGIN")
@@ -51,6 +72,8 @@ public class AuthServiceImpl implements AuthService {
                 .timestamp(LocalDateTime.now())
                 .build();
         auditLogRepository.save(log);
+
+        // 6. Return token
         return JwtResponse.builder()
                 .token(token)
                 .role(user.getRole())
@@ -63,14 +86,22 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Username already exists");
         }
-        // Save user
+
+        // Generate 2FA secret
+        GoogleAuthenticator gAuth = new GoogleAuthenticator();
+        GoogleAuthenticatorKey key = gAuth.createCredentials();
+        String secret = key.getKey();
+
+        // Save user with 2FA secret
         User user = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole().toUpperCase())
+                .twoFaSecret(secret)  // <-- Add this
                 .build();
+
         User savedUser = userRepository.save(user);
-        // Save customer only if role is CUSTOMER
+
         if (user.getRole().equals("CUSTOMER")) {
             Customer customer = Customer.builder()
                     .fullName(request.getFullName())
@@ -84,16 +115,16 @@ public class AuthServiceImpl implements AuthService {
                     .build();
             customerRepository.save(customer);
         }
-        // Audit log
-        AuditLog log = AuditLog.builder()
+
+        auditLogRepository.save(AuditLog.builder()
                 .userId(savedUser.getUserId())
                 .action("REGISTER")
                 .entityType("USER")
                 .entityId(savedUser.getUserId())
                 .timestamp(LocalDateTime.now())
-                .build();
-        auditLogRepository.save(log);
-        return "User registered successfully!";
+                .build());
+
+        return "User registered successfully. Setup 2FA using the secret or QR code.";
     }
 }
 

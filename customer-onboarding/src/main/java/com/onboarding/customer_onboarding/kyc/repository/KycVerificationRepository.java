@@ -8,4 +8,5 @@ import java.util.List;
 public interface KycVerificationRepository extends JpaRepository<KycVerification, Long> {
     Optional<KycVerification> findByCustomerIdAndDocumentId(Long customerId, Long documentId);
     List<KycVerification> findByCustomerId(Long customerId);
+    Optional<KycVerification> findTopByCustomerIdOrderByVerifiedAtDesc(Long customerId);
 }

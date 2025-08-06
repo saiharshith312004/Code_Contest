@@ -1,6 +1,8 @@
 package com.onboarding.authservice.model;
+
 import jakarta.persistence.*;
 import lombok.*;
+
 @Entity
 @Table(name = "USERS")
 @Getter
@@ -9,14 +11,21 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
     private Long userId;
+
     @Column(name = "username", nullable = false, unique = true)
     private String username;
+
     @Column(name = "password", nullable = false)
     private String password;
+
     @Column(name = "role", nullable = false)
     private String role; // "ADMIN" or "CUSTOMER"
+
+    @Column(name = "two_fa_secret")
+    private String twoFaSecret; // <-- This is the 2FA secret key (base32)
 }
