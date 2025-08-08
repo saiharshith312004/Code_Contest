@@ -1,6 +1,7 @@
 package com.onboarding.authservice.controller;
 
 import com.onboarding.authservice.dto.*;
+import com.onboarding.authservice.exception.InvalidTwoFactorCodeException;
 import com.onboarding.authservice.model.Customer;
 import com.onboarding.authservice.model.User;
 import com.onboarding.authservice.repository.UserRepository;
@@ -12,8 +13,10 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,10 +36,19 @@ public class AuthController {
 
 
     @PostMapping("/login")
-    public ResponseEntity<JwtResponse> login(@Valid @RequestBody JwtRequest request) {
-        JwtResponse response = authService.login(request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> login(@Valid @RequestBody JwtRequest request) {
+        try {
+            JwtResponse response = authService.login(request);
+            return ResponseEntity.ok(response);
+        } catch (BadCredentialsException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
+        } catch (InvalidTwoFactorCodeException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid two-factor authentication code");
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred");
+        }
     }
+
 
     @GetMapping("/customers")
     @PreAuthorize("hasRole('ADMIN')")
