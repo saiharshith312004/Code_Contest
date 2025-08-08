@@ -27,32 +27,22 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .csrf(csrf -> csrf.disable()) // Disable CSRF for now; add token later for production
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/register",
                                 "/api/auth/login",
                                 "/register",
                                 "/login",
+
                                 "/css/**",
                                 "/js/**",
                                 "/images/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .loginProcessingUrl("/login")
-                        .defaultSuccessUrl("/dashboard", true)
-                        .permitAll()
-                )
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login?logout")
-                        .permitAll()
-                )
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))  // Allow sessions for form login
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 🔄 Change to STATELESS for JWT
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
