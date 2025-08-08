@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <style>
+        body { font-family: sans-serif; }
+        .qr-img { margin-top: 20px; }
+    </style>
+</head>
+<body>
+<h2>Register</h2>
+<form id="registerForm">
+    <label>Username: <input type="text" name="username" required></label><br><br>
+    <label>Password: <input type="password" name="password" required></label><br><br>
+    <label>Role: <input type="text" name="role" required></label><br><br>
+
+    <!-- Optional customer fields -->
+    <label>Full Name: <input type="text" name="fullName"></label><br><br>
+    <label>Date of Birth: <input type="date" name="dob"></label><br><br>
+    <label>Phone: <input type="text" name="phone"></label><br><br>
+    <label>Email: <input type="email" name="email"></label><br><br>
+    <label>Aadhaar: <input type="text" name="aadhaar"></label><br><br>
+    <label>PAN: <input type="text" name="pan"></label><br><br>
+    <label>Address: <input type="text" name="address"></label><br><br>
+
+    <button type="submit">Register</button>
+</form>
+
+<div id="qrCodeSection" style="display:none;">
+    <h3>Scan this QR code with Google Authenticator</h3>
+    <img id="qrCodeImage" class="qr-img" src="" alt="QR Code">
+</div>
+
+<script>
+    const form = document.getElementById('registerForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (!res.ok) {
+        alert("Registration failed");
+        return;
+      }
+
+      const result = await res.json();
+      document.getElementById('qrCodeImage').src = result.qrCodeUrl;
+      document.getElementById('qrCodeSection').style.display = 'block';
+      alert(result.message);
+    });
+</script>
+</body>
+</html>

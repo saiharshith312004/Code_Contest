@@ -2,6 +2,7 @@ package com.onboarding.authservice.service;
 import com.onboarding.authservice.dto.JwtRequest;
 import com.onboarding.authservice.dto.JwtResponse;
 import com.onboarding.authservice.dto.RegisterRequest;
+import com.onboarding.authservice.dto.RegisterResponse;
 import com.onboarding.authservice.model.AuditLog;
 import com.warrenstrange.googleauth.GoogleAuthenticator;
 import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
@@ -29,6 +30,15 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
+
+
+    private String getGoogleAuthenticatorBarCode(String secretKey, String account, String issuer) {
+        return "otpauth://totp/"
+                + issuer + ":" + account
+                + "?secret=" + secretKey
+                + "&issuer=" + issuer;
+    }
+
 
     @Autowired
     private CustomerRepository customerRepository1;
@@ -79,25 +89,22 @@ public class AuthServiceImpl implements AuthService {
                 .role(user.getRole())
                 .username(user.getUsername())
                 .build();
-    }
-    @Override
+    }@Override
     @Transactional
-    public String register(RegisterRequest request) {
+    public RegisterResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Username already exists");
         }
 
-        // Generate 2FA secret
         GoogleAuthenticator gAuth = new GoogleAuthenticator();
         GoogleAuthenticatorKey key = gAuth.createCredentials();
         String secret = key.getKey();
 
-        // Save user with 2FA secret
         User user = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole().toUpperCase())
-                .twoFaSecret(secret)  // <-- Add this
+                .twoFaSecret(secret)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -124,8 +131,22 @@ public class AuthServiceImpl implements AuthService {
                 .timestamp(LocalDateTime.now())
                 .build());
 
-        return "User registered successfully. Setup 2FA using the secret or QR code.";
+        // URL encode username & secret in case they contain special characters
+        String usernameEncoded = java.net.URLEncoder.encode(savedUser.getUsername(), java.nio.charset.StandardCharsets.UTF_8);
+        String secretEncoded = java.net.URLEncoder.encode(secret, java.nio.charset.StandardCharsets.UTF_8);
+
+        // Generate the otpauth URI
+        String otpAuthUrl = String.format("otpauth://totp/YourAppName:%s?secret=%s&issuer=YourAppName", usernameEncoded, secretEncoded);
+
+        // Generate the QR code link using qrserver.com
+        String qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + java.net.URLEncoder.encode(otpAuthUrl, java.nio.charset.StandardCharsets.UTF_8);
+
+        return RegisterResponse.builder()
+                .message("User registered successfully. Setup 2FA using the secret or QR code.")
+                .qrCodeUrl(qrCodeUrl)
+                .build();
     }
+
 }
 
 
