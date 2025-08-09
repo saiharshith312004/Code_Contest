@@ -11,9 +11,8 @@ import java.time.LocalDateTime;
 @Builder
 public class AuditLog {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "audit_log_seq")
-    @SequenceGenerator(name = "audit_log_seq", sequenceName = "audit_log_seq", allocationSize = 1)
-    @Column(name = "log_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "log_id", insertable = false, updatable = false)
     private Long logId;
     @Column(name = "user_id", nullable = false)
     private Long userId;

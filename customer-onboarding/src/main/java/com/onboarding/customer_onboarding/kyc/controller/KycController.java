@@ -18,7 +18,7 @@ public class KycController {
     @PostMapping("/upload/{customerId}")
     public ResponseEntity<String> uploadKycDocument(
             @PathVariable Long customerId,
-            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam("type") String docType) {
         try {
             kycService.uploadDocument(customerId, file, docType);
