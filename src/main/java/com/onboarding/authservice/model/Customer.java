@@ -14,9 +14,8 @@ import lombok.*;
 @Builder
 public class Customer {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "customer_seq")
-    @SequenceGenerator(name = "customer_seq", sequenceName = "CUSTOMER_SEQ", allocationSize = 1)
-    @Column(name = "customer_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "customer_id", insertable = false, updatable = false)
     private Long customerId;
 
     @Column(name = "full_name", nullable = false)
