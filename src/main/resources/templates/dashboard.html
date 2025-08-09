@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Dashboard</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #F5F5F7;
+      margin: 2rem;
+      color: #2E2E2E;
+    }
+    h1 {
+      color: #4B2E83;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      text-align: center;
+      font-size: 2.4rem;
+    }
+    .info {
+      max-width: 480px;
+      margin: 0 auto;
+      background: white;
+      padding: 1.8rem 2rem;
+      border-radius: 10px;
+      box-shadow: 0 5px 20px rgba(75, 46, 131, 0.15);
+      border-top: 5px solid #4B2E83;
+    }
+    .info p {
+      margin: 0.7rem 0;
+      font-size: 1.1rem;
+      line-height: 1.4;
+      color: #4B2E83;
+      font-weight: 600;
+    }
+    .info p span {
+      font-weight: 400;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<h1 id="welcome-msg">Loading...</h1>
+
+<div class="info" id="customer-info" style="display:none;">
+  <p><strong>Full Name:</strong> <span id="fullName"></span></p>
+  <p><strong>Email:</strong> <span id="email"></span></p>
+  <p><strong>Phone:</strong> <span id="phone"></span></p>
+  <p><strong>Date of Birth:</strong> <span id="dob"></span></p>
+  <p><strong>Address:</strong> <span id="address"></span></p>
+  <p><strong>PAN:</strong> <span id="pan"></span></p>
+  <p><strong>Aadhaar:</strong> <span id="aadhaar"></span></p>
+</div>
+
+<script>
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    window.location.href = '/login';
+  } else {
+    fetch('/api/auth/validate', {
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+    .then(response => {
+      if (!response.ok) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
+      return response.json();
+    })
+    .then(data => {
+      document.getElementById('welcome-msg').textContent = `Welcome, ${data.fullName || data.username}`;
+      document.getElementById('fullName').textContent = data.fullName || '-';
+      document.getElementById('email').textContent = data.email || '-';
+      document.getElementById('phone').textContent = data.phone || '-';
+      document.getElementById('dob').textContent = data.dob || '-';
+      document.getElementById('address').textContent = data.address || '-';
+      document.getElementById('pan').textContent = data.pan || '-';
+      document.getElementById('aadhaar').textContent = data.aadhaar || '-';
+
+      document.getElementById('customer-info').style.display = 'block';
+    })
+    .catch(err => {
+      console.error('Error:', err);
+      window.location.href = '/login';
+    });
+  }
+</script>
+
+</body>
+</html>
