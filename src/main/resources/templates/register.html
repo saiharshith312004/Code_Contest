@@ -1,36 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Register</title>
     <style>
-        body { font-family: sans-serif; }
-        .qr-img { margin-top: 20px; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #F5F5F7;
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        form {
+            background: white;
+            padding: 2rem 2.5rem;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(75, 46, 131, 0.15);
+            width: 360px;
+            border-top: 6px solid #4B2E83;
+        }
+        h2 {
+            margin-bottom: 1.8rem;
+            color: #4B2E83;
+            font-weight: 700;
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: #4B2E83;
+        }
+        input[type="text"], input[type="password"], input[type="email"], input[type="date"] {
+            width: 100%;
+            padding: 0.55rem;
+            margin-top: 0.3rem;
+            border: 1.5px solid #6C4BA9;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        input[type="email"]:focus,
+        input[type="date"]:focus {
+            border-color: #4B2E83;
+            outline: none;
+            box-shadow: 0 0 6px #4B2E83AA;
+        }
+        button {
+            margin-top: 1.5rem;
+            width: 100%;
+            padding: 0.7rem;
+            background-color: #4B2E83;
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #3A2464;
+        }
+        #qrCodeSection {
+            margin-top: 2rem;
+            text-align: center;
+            color: #4B2E83;
+        }
+        #qrCodeSection h3 {
+            margin-bottom: 1rem;
+        }
+        .qr-img {
+            max-width: 180px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(75, 46, 131, 0.2);
+        }
     </style>
 </head>
 <body>
-<h2>Register</h2>
-<form id="registerForm">
-    <label>Username: <input type="text" name="username" required></label><br><br>
-    <label>Password: <input type="password" name="password" required></label><br><br>
-    <label>Role: <input type="text" name="role" required></label><br><br>
 
+<form id="registerForm">
+    <h2>Register</h2>
+    <label>Username:
+        <input type="text" name="username" required />
+    </label>
+    <label>Password:
+        <input type="password" name="password" required />
+    </label>
+    <label>Role:
+        <input type="text" name="role" required />
+    </label>
     <!-- Optional customer fields -->
-    <label>Full Name: <input type="text" name="fullName"></label><br><br>
-    <label>Date of Birth: <input type="date" name="dob"></label><br><br>
-    <label>Phone: <input type="text" name="phone"></label><br><br>
-    <label>Email: <input type="email" name="email"></label><br><br>
-    <label>Aadhaar: <input type="text" name="aadhaar"></label><br><br>
-    <label>PAN: <input type="text" name="pan"></label><br><br>
-    <label>Address: <input type="text" name="address"></label><br><br>
+    <label>Full Name:
+        <input type="text" name="fullName" />
+    </label>
+    <label>Date of Birth:
+        <input type="date" name="dob" />
+    </label>
+    <label>Phone:
+        <input type="text" name="phone" />
+    </label>
+    <label>Email:
+        <input type="email" name="email" />
+    </label>
+    <label>Aadhaar:
+        <input type="text" name="aadhaar" />
+    </label>
+    <label>PAN:
+        <input type="text" name="pan" />
+    </label>
+    <label>Address:
+        <input type="text" name="address" />
+    </label>
 
     <button type="submit">Register</button>
-</form>
 
-<div id="qrCodeSection" style="display:none;">
-    <h3>Scan this QR code with Google Authenticator</h3>
-    <img id="qrCodeImage" class="qr-img" src="" alt="QR Code">
-</div>
+    <div id="qrCodeSection" style="display:none;">
+        <h3>Scan this QR code with Google Authenticator</h3>
+        <img id="qrCodeImage" class="qr-img" src="" alt="QR Code" />
+    </div>
+</form>
 
 <script>
     const form = document.getElementById('registerForm');
@@ -57,5 +151,6 @@
       alert(result.message);
     });
 </script>
+
 </body>
 </html>

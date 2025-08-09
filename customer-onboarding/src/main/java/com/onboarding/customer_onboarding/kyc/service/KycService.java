@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -24,12 +26,27 @@ import java.util.Optional;
 public class KycService {
     @Autowired
     private KycDocumentRepository kycRepo;
-    @Autowired
-    private CustomerRepository customerRepo;
-    @Autowired
-    private KycVerificationRepository kycVerificationRepo;
+    private final CustomerRepository customerRepo;
+    private final KycVerificationRepository kycVerificationRepo;
+    private final KycEventProducer kycEventProducer;
 
+    @Autowired
+    public KycService(CustomerRepository customerRepo, 
+                     KycVerificationRepository kycVerificationRepo,
+                     KycEventProducer kycEventProducer) {
+        this.customerRepo = customerRepo;
+        this.kycVerificationRepo = kycVerificationRepo;
+        this.kycEventProducer = kycEventProducer;
+    }
 
+    /**
+     * Uploads a KYC document for a customer.
+     *
+     * @param customerId The ID of the customer.
+     * @param file       The document to be uploaded.
+     * @param docType    The type of document (e.g., AADHAAR, PAN, etc.).
+     * @throws IOException If an error occurs while reading the file.
+     */
     public void uploadDocument(Long customerId, MultipartFile file, String docType) throws IOException {
         KycDocument doc = new KycDocument();
         doc.setCustomerId(customerId);
@@ -75,14 +92,45 @@ public class KycService {
     }
 
     public String updateKycStatus(Long customerId, String status) {
+        log.info("Starting KYC status update for customer: {}, new status: {}", customerId, status);
+        
         if (!status.equals("ACCEPTED") && !status.equals("REJECTED") && !status.equals("PENDING")) {
-            throw new IllegalArgumentException("Invalid status. Allowed: ACCEPTED, REJECTED, PENDING");
+            String errorMsg = String.format("Invalid status: %s. Allowed: ACCEPTED, REJECTED, PENDING", status);
+            log.error(errorMsg);
+            throw new IllegalArgumentException(errorMsg);
         }
+        
         Customer customer = customerRepo.findById(customerId)
-            .orElseThrow(() -> new RuntimeException("Customer not found"));
+            .orElseThrow(() -> {
+                String errorMsg = "Customer not found with ID: " + customerId;
+                log.error(errorMsg);
+                return new RuntimeException(errorMsg);
+            });
+            
+        String oldStatus = customer.getKycStatus();
+        log.info("Current KYC status for customer {}: {}", customerId, oldStatus);
+        
         customer.setKycStatus(status);
         customerRepo.save(customer);
-        return "KYC status updated to " + status + " for customer ID: " + customerId;
+        
+        log.info("Updated KYC status for customer {} from {} to {}", customerId, oldStatus, status);
+        
+        if ("ACCEPTED".equals(status)) {
+            log.info("Publishing KYC verified event for customer: {}", customerId);
+            try {
+                kycEventProducer.publishKycVerifiedEvent(customerId);
+                log.info("Successfully triggered KYC event publishing for customer: {}", customerId);
+            } catch (Exception e) {
+                log.error("Error publishing KYC verified event for customer: {}", customerId, e);
+                throw new RuntimeException("Failed to publish KYC verified event", e);
+            }
+        } else {
+            log.info("Skipping KYC event publishing - status is not ACCEPTED");
+        }
+        
+        String response = "KYC status updated to " + status + " for customer ID: " + customerId;
+        log.info("Completed KYC status update. {}", response);
+        return response;
     }
 
     /**
@@ -137,25 +185,6 @@ public class KycService {
         // Status updated successfully
     }
 
-    /**
-     * Verifies or rejects a KYC document and updates the customer's KYC status accordingly.
-     * Status transition rules:
-     * - VERIFIED → VERIFIED: Restricted (no change allowed)
-     * - VERIFIED → REJECTED: Allowed
-     * - VERIFIED → PENDING: Allowed
-     * - REJECTED → PENDING: Allowed
-     * - REJECTED → VERIFIED: Allowed
-     * 
-     * @param customerId The ID of the customer
-     * @param documentId The ID of the document to verify/reject
-     * @param newStatus The new status (VERIFIED/REJECTED/PENDING)
-     * @param remarks Optional remarks from the admin
-     * @param adminUsername Username of the admin performing the action
-     * @param adminId ID of the admin performing the action
-     * @throws IllegalArgumentException if status transition is not allowed or document doesn't belong to customer
-     * @throws EntityNotFoundException if document or customer is not found
-     * @throws IllegalStateException if trying to change status from VERIFIED to VERIFIED
-     */
     @Transactional
     public void verifyKycDocument(Long customerId, Long documentId, String newStatus, String remarks, 
                                 String adminUsername, Long adminId) {

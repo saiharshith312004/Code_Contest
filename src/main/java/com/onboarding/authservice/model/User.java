@@ -1,5 +1,6 @@
 package com.onboarding.authservice.model;
 
+import com.onboarding.authservice.model.Customer;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,9 +14,9 @@ import lombok.*;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
-    @SequenceGenerator(name = "user_seq", sequenceName = "USER_SEQ", allocationSize = 1)
-    @Column(name = "user_id")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq_gen")
+    @SequenceGenerator(name = "user_seq_gen", sequenceName = "USER_SEQ", allocationSize = 1)
+    @Column(name = "user_id", updatable = false, nullable = false)
     private Long userId;
 
     @Column(name = "username", nullable = false, unique = true)
@@ -28,5 +29,8 @@ public class User {
     private String role; // "ADMIN" or "CUSTOMER"
 
     @Column(name = "two_fa_secret")
-    private String twoFaSecret; // <-- This is the 2FA secret key (base32)
+    private String twoFaSecret;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Customer customer;
 }

@@ -73,8 +73,28 @@ public class AuthController {
     public ResponseEntity<?> validateUser(@RequestHeader("Authorization") String tokenHeader) {
         String token = tokenHeader.replace("Bearer ", "");
         String username = jwtUtil.extractUsername(token);
+
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        return ResponseEntity.ok(new UserResponse(user.getUsername(), user.getRole()));
+
+        Customer customer = user.getCustomer(); // assuming User ↔ Customer mapping exists
+
+        if (customer == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Customer profile not found");
+        }
+
+        CustomerDashboardResponse response = CustomerDashboardResponse.builder()
+                .username(user.getUsername())
+                .fullName(customer.getFullName())
+                .dob(customer.getDob())
+                .email(customer.getEmail())
+                .phone(customer.getPhone())
+                .address(customer.getAddress())
+                .pan(customer.getPan())
+                .aadhaar(customer.getAadhaar())
+                .build();
+
+        return ResponseEntity.ok(response);
     }
+
 }
