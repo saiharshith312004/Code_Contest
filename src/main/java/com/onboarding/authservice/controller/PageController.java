@@ -8,16 +8,16 @@ public class PageController {
 
     @GetMapping("/login")
     public String showLoginPage() {
-        return "login"; // maps to src/main/resources/templates/login.html
+        return "login";
     }
 
     @GetMapping("/register")
     public String showRegisterPage() {
-        return "register"; // maps to src/main/resources/templates/register.html
+        return "register";
     }
 
     @GetMapping("/dashboard")
     public String showDashboard() {
-        return "dashboard"; // maps to dashboard.html (optional)
+        return "dashboard";
     }
 }

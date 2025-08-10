@@ -6,7 +6,8 @@ import java.time.LocalDateTime;
 @Table(name = "kyc_documents2")
 public class KycDocument {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "kyc_doc_seq")
+    @SequenceGenerator(name = "kyc_doc_seq", sequenceName = "KYC_DOC_SEQ", allocationSize = 1)
     @Column(name = "DOCUMENT_ID")
     private Long id;
 

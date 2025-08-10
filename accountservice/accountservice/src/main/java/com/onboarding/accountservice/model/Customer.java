@@ -1,30 +1,26 @@
-package com.onboarding.customer_onboarding.model;
-
-
-import jakarta.persistence.*;
-
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Pattern;
-import lombok.Getter;
-import lombok.Setter;
-import jakarta.persistence.Id;
+package com.onboarding.accountservice.model;
 
 import java.time.LocalDate;
 
-@Setter
-@Getter
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
+
+import lombok.*;
 @Entity
 @Table(name = "CUSTOMERS")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Customer {
-    // Getters and setters
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "customer_seq_gen")
     @SequenceGenerator(name = "customer_seq_gen", sequenceName = "CUSTOMER_SEQ", allocationSize = 1)
     @Column(name = "customer_id", updatable = false, nullable = false)
     private Long customerId;
 
-    // Add any fields referenced by KYC (e.g., kycStatus)
-    private String kycStatus;
 
     @Column(name = "full_name", nullable = false)
     private String fullName;
@@ -43,7 +39,11 @@ public class Customer {
     @Column(name = "aadhaar", nullable = false, length = 12)
     private String aadhaar;
 
+    @Column(name = "kyc_status")
+    private String kycStatus;
 
-
+    @OneToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "user_id", nullable = false)
+    private User user;
 
 }

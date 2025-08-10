@@ -37,7 +37,12 @@ public class Customer {
     private String pan;
     @Column(name = "aadhaar", nullable = false, length = 12)
     private String aadhaar;
+
+    @Column(name = "kyc_status")
+    private String kycStatus;
+
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "user_id", nullable = false)
     private User user;
+
 }

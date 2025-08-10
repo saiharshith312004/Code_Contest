@@ -19,4 +19,6 @@ public class CustomerDashboardResponse {
     private String address;
     private String pan;
     private String aadhaar;
+    private String kycStatus;
+    private Long customerId;
 }

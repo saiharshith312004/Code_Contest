@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NetBanking Application</title>
+    <!-- Font + Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;700&display=swap" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+    <style>
+        :root {
+            --primary-purple: #4B2E83;
+            --primary-purple-dark: #3A226A;
+            --background-light: #F5F5F7;
+            --background-white: #FFFFFF;
+            --text-dark: #2E2E2E;
+            --text-purple: #4B2E83;
+            --shadow: 0 5px 20px rgba(75, 46, 131, 0.15);
+        }
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: var(--background-light);
+            color: var(--text-dark);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 60px;
+            background-color: var(--primary-purple);
+            transition: width 0.3s ease;
+            overflow-x: hidden;
+            z-index: 1000;
+        }
+        .sidebar.open {
+            width: 220px;
+        }
+        .sidebar .toggle-btn {
+            font-size: 22px;
+            padding: 15px;
+            color: #fff;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.3s ease;
+        }
+        .sidebar .toggle-btn:hover {
+            color: var(--background-light);
+        }
+        .sidebar ul {
+            list-style: none;
+            padding-top: 70px;
+            margin: 0;
+        }
+        .sidebar li {
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: 600;
+        }
+        .sidebar li:hover {
+            background-color: var(--primary-purple-dark);
+            color: var(--background-light);
+        }
+        .sidebar i {
+            font-size: 18px;
+            margin-right: 12px;
+            min-width: 20px;
+            transition: color 0.3s ease;
+        }
+        .sidebar li span {
+            display: none;
+        }
+        .sidebar.open li span {
+            display: inline;
+        }
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 60px;
+            right: 0;
+            height: 60px;
+            background: var(--primary-purple);
+            color: #fff;
+            font-weight: 700;
+            font-size: 24px;
+            line-height: 60px;
+            padding-left: 20px;
+            box-shadow: var(--shadow);
+            z-index: 900;
+            transition: left 0.3s ease;
+            margin: 0;
+        }
+        .sidebar.open ~ header {
+            left: 220px;
+        }
+        header .helpline {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            font-weight: 500;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        /* Welcome Banner */
+        .welcome-banner {
+            position: fixed;
+            top: 60px;
+            left: 60px;
+            right: 0;
+            height: 40px;
+            background: var(--primary-purple-dark);
+            color: #fff;
+            font-size: 1.25rem;
+            font-weight: 500;
+            line-height: 40px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-shadow: 0 0 5px var(--primary-purple);
+            z-index: 800;
+            padding-left: 5px;
+            transition: left 0.3s ease;
+            margin: 0;
+        }
+        .sidebar.open ~ .welcome-banner {
+            left: 220px;
+        }
+        .welcome-banner span {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee 15s linear infinite;
+        }
+        @keyframes marquee {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+        /* Main Content */
+        .main-content {
+            padding: 110px 30px 80px 80px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 32px;
+            transition: padding-left 0.3s ease;
+            min-height: calc(100vh - 190px);
+            margin: 0;
+        }
+        .sidebar.open ~ .main-content {
+            padding-left: 240px;
+        }
+        /* Cards */
+        .card {
+            background: var(--background-white);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            padding: 45px 25px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s;
+            color: var(--text-purple);
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            border-top: 5px solid var(--primary-purple);
+        }
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 28px rgba(75, 46, 131, 0.3);
+            background: #EEE8F5;
+            color: var(--primary-purple-dark);
+        }
+        .card i {
+            font-size: 48px;
+            color: var(--primary-purple);
+            margin-bottom: 20px;
+            transition: color 0.3s ease;
+        }
+        .card:hover i {
+            color: var(--primary-purple-dark);
+        }
+        .card h3 {
+            font-size: 20px;
+            margin-bottom: 18px;
+        }
+        .card a {
+            background-color: var(--primary-purple);
+            color: #fff;
+            padding: 12px 28px;
+            text-decoration: none;
+            font-weight: 700;
+            border-radius: 8px;
+            display: inline-block;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .card:hover a {
+            background-color: var(--primary-purple-dark);
+            color: #fff;
+        }
+        /* Footer */
+        footer {
+            height: 50px;
+            background: var(--background-white);
+            color: var(--text-purple);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.05);
+            position: fixed;
+            bottom: 0;
+            left: 60px;
+            right: 0;
+            transition: left 0.3s ease;
+            z-index: 700;
+            margin: 0;
+        }
+        .sidebar.open ~ footer {
+            left: 220px;
+        }
+    </style>
+    <script>
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        }
+        function navigateTo(url) {
+            window.location.href = url;
+        }
+    </script>
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <div class="toggle-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </div>
+    <ul>
+        <li><i class="fas fa-user-shield"></i><span>Private Banking</span></li>
+        <li><i class="fas fa-building-columns"></i><span>Corporate Banking</span></li>
+        <li><i class="fas fa-chart-line"></i><span>Investment Services</span></li>
+        <li><i class="fas fa-sack-dollar"></i><span>Loans & Credit</span></li>
+    </ul>
+</div>
+<!-- Header -->
+<header>
+    NetBanking Application
+    <div class="helpline">
+        <i class="fas fa-phone-alt flipped-icon"></i> Toll-Free: 1800-123-4567
+    </div>
+</header>
+<!-- Welcome Banner -->
+<div class="welcome-banner">
+    <span>Welcome to the NetBanking Application — Secure. Simple. Smart Banking.</span>
+</div>
+<!-- Main Content -->
+<div class="main-content">
+    <div class="card" onclick="navigateTo('/bank-account-creation')">
+        <i class="fas fa-university"></i>
+        <h3>Bank Account Creation</h3>
+        <a href="/bank-account-creation" onclick="event.stopPropagation()">Create Now</a>
+    </div>
+    <div class="card" onclick="navigateTo('/register')">
+        <i class="fas fa-user-plus"></i>
+        <h3>New User Registration</h3>
+        <a href="/register" onclick="event.stopPropagation()">Register</a>
+    </div>
+    <div class="card" onclick="navigateTo('/user-login')">
+        <i class="fas fa-user-lock"></i>
+        <h3>Customer Login</h3>
+        <a href="/auth/user/login" onclick="event.stopPropagation()">Login</a>
+    </div>
+    <div class="card" onclick="navigateTo('/admin-login')">
+        <i class="fas fa-user-cog"></i>
+        <h3>Admin Login</h3>
+        <a href="/auth/admin/login" onclick="event.stopPropagation()">Admin Panel</a>
+    </div>
+</div>
+<!-- Footer -->
+<footer>© 2025 NetBanking Inc. All Rights Reserved.</footer>
+</body>
+</html>

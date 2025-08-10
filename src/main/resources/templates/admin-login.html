@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Admin Login</title>
+    <meta charset="UTF-8" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #F5F5F7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background: white;
+            padding: 2.5rem 3rem;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(75, 46, 131, 0.2);
+            width: 340px;
+            border-top: 6px solid #4B2E83;
+        }
+        h2 {
+            margin-bottom: 2rem;
+            text-align: center;
+            color: #4B2E83;
+            font-weight: 700;
+        }
+        input[type="text"], input[type="password"], input[type="number"] {
+            width: 100%;
+            padding: 0.65rem;
+            margin: 0.5rem 0 1.5rem 0;
+            border: 1.5px solid #6C4BA9;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        input:focus {
+            border-color: #4B2E83;
+            outline: none;
+            box-shadow: 0 0 5px #4B2E83AA;
+        }
+        button {
+            width: 100%;
+            padding: 0.7rem;
+            background-color: #4B2E83;
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #3A2464;
+        }
+        .error {
+            color: #E03C3C;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <h2>Admin Login</h2>
+
+    <!-- Error message -->
+    <div class="error"></div>
+
+    <form id="adminLoginForm">
+        <input type="text" name="username" placeholder="Admin Username" required autocomplete="username" />
+        <input type="password" name="password" placeholder="Password" required autocomplete="current-password" />
+        <input type="text" name="code" placeholder="2FA Code" required pattern="\d{6}" title="Enter 6-digit code" />
+        <button type="submit">Login</button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.getElementById('adminLoginForm');
+        const errorDiv = document.querySelector('.error');
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+
+            const formData = new FormData(form);
+            const username = formData.get('username');
+            const password = formData.get('password');
+            const code = formData.get('code');
+
+            console.log("Submitting login:", { username, code }); // Debug log
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, code })
+                });
+
+                console.log("Login response status:", response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    errorDiv.textContent = errorText || 'Login failed';
+                    errorDiv.style.display = 'block';
+                    console.error("Login failed:", errorText);
+                    return;
+                }
+
+                let data = {};
+                const contentType = response.headers.get('Content-Type') || '';
+                if (contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    console.warn("Response is not JSON, skipping parse");
+                }
+
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                }
+
+                console.log("Login successful, redirecting...");
+                window.location.href = '/admin-dashboard';
+
+            } catch (error) {
+                console.error("Login error:", error);
+                errorDiv.textContent = 'Error: ' + error.message;
+                errorDiv.style.display = 'block';
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

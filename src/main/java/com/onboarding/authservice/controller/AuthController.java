@@ -92,7 +92,10 @@ public class AuthController {
                 .address(customer.getAddress())
                 .pan(customer.getPan())
                 .aadhaar(customer.getAadhaar())
+                .customerId(customer.getCustomerId())  // add this line
                 .build();
+
+
 
         return ResponseEntity.ok(response);
     }

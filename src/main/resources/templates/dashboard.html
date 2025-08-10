@@ -8,6 +8,7 @@
       background: #F5F5F7;
       margin: 2rem;
       color: #2E2E2E;
+      position: relative;
     }
     h1 {
       color: #4B2E83;
@@ -15,6 +16,22 @@
       margin-bottom: 1rem;
       text-align: center;
       font-size: 2.4rem;
+    }
+    .logout-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: #4B2E83;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.3s;
+    }
+    .logout-btn:hover {
+      background: #3A226A;
     }
     .info {
       max-width: 480px;
@@ -36,9 +53,109 @@
       font-weight: 400;
       color: #333;
     }
+    .kyc-section {
+      max-width: 600px;
+      margin: 2rem auto;
+      background: white;
+      padding: 1.8rem 2rem;
+      border-radius: 10px;
+      box-shadow: 0 5px 20px rgba(75, 46, 131, 0.15);
+      border-top: 5px solid #4B2E83;
+    }
+    .kyc-section h2 {
+      text-align: center;
+      color: #4B2E83;
+      font-size: 1.4rem;
+      margin-bottom: 1.5rem;
+    }
+    .upload-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .upload-box {
+      flex: 1 1 45%;
+      background: #F5F5F7;
+      border: 2px dashed #4B2E83;
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.3s, border-color 0.3s;
+      position: relative;
+      user-select: none;
+    }
+    .upload-box:hover {
+      background: #EEE8F5;
+      border-color: #3A226A;
+    }
+    .upload-title {
+      font-weight: 600;
+      color: #4B2E83;
+      margin-bottom: 0.5rem;
+    }
+    .upload-text {
+      color: #555;
+      font-size: 0.9rem;
+    }
+    .upload-box input {
+      display: none;
+    }
+    .file-info {
+      margin-top: 0.5rem;
+      font-weight: 600;
+      color: #4B2E83;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .file-info button {
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      border: none;
+      font-size: 0.85rem;
+      transition: background-color 0.3s;
+    }
+    .file-info button.view-btn {
+      background-color: #4B2E83;
+      color: white;
+    }
+    .file-info button.view-btn:hover {
+      background-color: #3A226A;
+    }
+    .file-info button.delete-btn {
+      background-color: #E55;
+      color: white;
+    }
+    .file-info button.delete-btn:hover {
+      background-color: #C33;
+    }
+    #submitKyc {
+      background: #4B2E83;
+      color: white;
+      border: none;
+      padding: 0.7rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-top: 1.5rem;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #submitKyc:disabled {
+      background: #A99BC9;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
+
+<button class="logout-btn" id="logoutBtn">Logout</button>
 
 <h1 id="welcome-msg">Loading...</h1>
 
@@ -52,8 +169,36 @@
   <p><strong>Aadhaar:</strong> <span id="aadhaar"></span></p>
 </div>
 
+<div class="kyc-section">
+  <h2>Add the following documents for completing the KYC Process</h2>
+  <div class="upload-container">
+    <label class="upload-box" for="aadhaarFile">
+      <div class="upload-title">Aadhaar PDF</div>
+      <input type="file" accept="application/pdf" id="aadhaarFile" name="aadhaarFile">
+      <div class="upload-text" id="aadhaarUploadText">Click or drag & drop to upload</div>
+      <div class="file-info" id="aadhaarFileInfo" style="display:none;">
+        <span id="aadhaarFileName"></span>
+        <button type="button" class="view-btn" id="viewAadhaarBtn">View</button>
+        <button type="button" class="delete-btn" id="deleteAadhaarBtn">Delete</button>
+      </div>
+    </label>
+    <label class="upload-box" for="panFile">
+      <div class="upload-title">PAN PDF</div>
+      <input type="file" accept="application/pdf" id="panFile" name="panFile">
+      <div class="upload-text" id="panUploadText">Click or drag & drop to upload</div>
+      <div class="file-info" id="panFileInfo" style="display:none;">
+        <span id="panFileName"></span>
+        <button type="button" class="view-btn" id="viewPanBtn">View</button>
+        <button type="button" class="delete-btn" id="deletePanBtn">Delete</button>
+      </div>
+    </label>
+  </div>
+  <button id="submitKyc" disabled>Submit Documents</button>
+</div>
+
 <script>
   const token = localStorage.getItem('token');
+  let customerId = null;
 
   if (!token) {
     window.location.href = '/login';
@@ -70,6 +215,7 @@
       return response.json();
     })
     .then(data => {
+      customerId = data.customerId;  // Save customerId for KYC upload
       document.getElementById('welcome-msg').textContent = `Welcome, ${data.fullName || data.username}`;
       document.getElementById('fullName').textContent = data.fullName || '-';
       document.getElementById('email').textContent = data.email || '-';
@@ -86,6 +232,136 @@
       window.location.href = '/login';
     });
   }
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.removeItem('token');
+    window.location.href = '/login';
+  });
+
+  const aadhaarInput = document.getElementById('aadhaarFile');
+  const panInput = document.getElementById('panFile');
+  const submitBtn = document.getElementById('submitKyc');
+
+  const aadhaarFileInfo = document.getElementById('aadhaarFileInfo');
+  const aadhaarFileName = document.getElementById('aadhaarFileName');
+  const viewAadhaarBtn = document.getElementById('viewAadhaarBtn');
+  const deleteAadhaarBtn = document.getElementById('deleteAadhaarBtn');
+  const aadhaarUploadText = document.getElementById('aadhaarUploadText');
+
+  const panFileInfo = document.getElementById('panFileInfo');
+  const panFileName = document.getElementById('panFileName');
+  const viewPanBtn = document.getElementById('viewPanBtn');
+  const deletePanBtn = document.getElementById('deletePanBtn');
+  const panUploadText = document.getElementById('panUploadText');
+
+  function updateFileInfo(input, fileInfoDiv, fileNameSpan, uploadTextDiv) {
+    if (input.files.length > 0) {
+      const file = input.files[0];
+      fileNameSpan.textContent = file.name;
+      fileInfoDiv.style.display = 'flex';
+      uploadTextDiv.style.display = 'none';
+    } else {
+      fileInfoDiv.style.display = 'none';
+      uploadTextDiv.style.display = 'block';
+    }
+    checkFiles();
+  }
+
+  aadhaarInput.addEventListener('change', () => {
+    updateFileInfo(aadhaarInput, aadhaarFileInfo, aadhaarFileName, aadhaarUploadText);
+  });
+
+  panInput.addEventListener('change', () => {
+    updateFileInfo(panInput, panFileInfo, panFileName, panUploadText);
+  });
+
+  viewAadhaarBtn.addEventListener('click', () => {
+    const file = aadhaarInput.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      window.open(url, '_blank');
+    }
+  });
+
+  viewPanBtn.addEventListener('click', () => {
+    const file = panInput.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      window.open(url, '_blank');
+    }
+  });
+
+  deleteAadhaarBtn.addEventListener('click', () => {
+    aadhaarInput.value = '';
+    updateFileInfo(aadhaarInput, aadhaarFileInfo, aadhaarFileName, aadhaarUploadText);
+  });
+
+  deletePanBtn.addEventListener('click', () => {
+    panInput.value = '';
+    updateFileInfo(panInput, panFileInfo, panFileName, panUploadText);
+  });
+
+  function checkFiles() {
+    submitBtn.disabled = !(aadhaarInput.files.length > 0 && panInput.files.length > 0);
+  }
+
+  submitBtn.addEventListener('click', () => {
+    if (!customerId) {
+      alert('Customer ID not found. Please refresh and try again.');
+      return;
+    }
+
+    const aadhaarFile = aadhaarInput.files[0];
+    const panFile = panInput.files[0];
+
+    if (!aadhaarFile || !panFile) {
+      alert('Please select both Aadhaar and PAN PDF files.');
+      return;
+    }
+
+    const formDataAadhaar = new FormData();
+    formDataAadhaar.append('file', aadhaarFile);
+    formDataAadhaar.append('type', 'AADHAAR');
+
+    const formDataPan = new FormData();
+    formDataPan.append('file', panFile);
+    formDataPan.append('type', 'PAN');
+
+    const baseUrl = 'http://localhost:8090/api/kyc/upload';
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Uploading...';
+
+    fetch(`${baseUrl}/${customerId}`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: formDataAadhaar
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to upload Aadhaar');
+      return fetch(`${baseUrl}/${customerId}`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: formDataPan
+      });
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to upload PAN');
+      alert('KYC documents uploaded successfully!');
+      aadhaarInput.value = '';
+      panInput.value = '';
+      updateFileInfo(aadhaarInput, aadhaarFileInfo, aadhaarFileName, aadhaarUploadText);
+      updateFileInfo(panInput, panFileInfo, panFileName, panUploadText);
+      submitBtn.textContent = 'Submit Documents';
+      submitBtn.disabled = true;
+    })
+    .catch(err => {
+      alert('Error uploading documents: ' + err.message);
+      console.error(err);
+      submitBtn.textContent = 'Submit Documents';
+      submitBtn.disabled = false;
+    });
+  });
 </script>
 
 </body>

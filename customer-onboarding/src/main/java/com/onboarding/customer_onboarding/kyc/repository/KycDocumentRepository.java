@@ -10,4 +10,8 @@ public interface KycDocumentRepository extends JpaRepository<KycDocument, Long> 
     
     List<KycDocument> findByCustomerIdAndFileName(Long customerId, String fileName);
     void deleteByCustomerIdAndFileName(Long customerId, String fileName);
+
+
+
+
 }
