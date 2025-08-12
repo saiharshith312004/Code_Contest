@@ -21,4 +21,6 @@ public class CustomerDashboardResponse {
     private String aadhaar;
     private String kycStatus;
     private Long customerId;
+    private String accountNumber;
+
 }

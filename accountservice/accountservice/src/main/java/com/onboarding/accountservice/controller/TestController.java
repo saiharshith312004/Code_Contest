@@ -5,11 +5,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/test")
+@ConditionalOnProperty(name = "controllers.test.enabled", havingValue = "true")
 public class TestController {
 
     private final AccountService accountService;

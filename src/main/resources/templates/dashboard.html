@@ -86,9 +86,13 @@
       position: relative;
       user-select: none;
     }
-    .upload-box:hover {
+    .upload-box:hover:not(.disabled) {
       background: #EEE8F5;
       border-color: #3A226A;
+    }
+    .upload-box.disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
     }
     .upload-title {
       font-weight: 600;
@@ -167,12 +171,14 @@
   <p><strong>Address:</strong> <span id="address"></span></p>
   <p><strong>PAN:</strong> <span id="pan"></span></p>
   <p><strong>Aadhaar:</strong> <span id="aadhaar"></span></p>
+  <p><strong>KYC Status:</strong> <span id="kycStatus">-</span></p>
+  <p id="accountNumberField" style="display:none;"><strong>Account Number:</strong> <span id="accountNumber"></span></p>
 </div>
 
 <div class="kyc-section">
   <h2>Add the following documents for completing the KYC Process</h2>
   <div class="upload-container">
-    <label class="upload-box" for="aadhaarFile">
+    <label class="upload-box" id="aadhaarLabel" for="aadhaarFile">
       <div class="upload-title">Aadhaar PDF</div>
       <input type="file" accept="application/pdf" id="aadhaarFile" name="aadhaarFile">
       <div class="upload-text" id="aadhaarUploadText">Click or drag & drop to upload</div>
@@ -182,7 +188,7 @@
         <button type="button" class="delete-btn" id="deleteAadhaarBtn">Delete</button>
       </div>
     </label>
-    <label class="upload-box" for="panFile">
+    <label class="upload-box" id="panLabel" for="panFile">
       <div class="upload-title">PAN PDF</div>
       <input type="file" accept="application/pdf" id="panFile" name="panFile">
       <div class="upload-text" id="panUploadText">Click or drag & drop to upload</div>
@@ -215,18 +221,46 @@
       return response.json();
     })
     .then(data => {
-      customerId = data.customerId;  // Save customerId for KYC upload
-      document.getElementById('welcome-msg').textContent = `Welcome, ${data.fullName || data.username}`;
-      document.getElementById('fullName').textContent = data.fullName || '-';
-      document.getElementById('email').textContent = data.email || '-';
-      document.getElementById('phone').textContent = data.phone || '-';
-      document.getElementById('dob').textContent = data.dob || '-';
-      document.getElementById('address').textContent = data.address || '-';
-      document.getElementById('pan').textContent = data.pan || '-';
-      document.getElementById('aadhaar').textContent = data.aadhaar || '-';
+  customerId = data.customerId;
+  document.getElementById('welcome-msg').textContent = `Welcome, ${data.fullName || data.username}`;
+  document.getElementById('fullName').textContent = data.fullName || '-';
+  document.getElementById('email').textContent = data.email || '-';
+  document.getElementById('phone').textContent = data.phone || '-';
+  document.getElementById('dob').textContent = data.dob || '-';
+  document.getElementById('address').textContent = data.address || '-';
+  document.getElementById('pan').textContent = data.pan || '-';
+  document.getElementById('aadhaar').textContent = data.aadhaar || '-';
 
-      document.getElementById('customer-info').style.display = 'block';
-    })
+  document.getElementById('kycStatus').textContent = data.kycStatus || '-';
+
+  // Show or hide account number
+  if (data.kycStatus && data.kycStatus.toLowerCase() === 'accepted' && data.accountNumber) {
+    document.getElementById('accountNumber').textContent = data.accountNumber;
+    document.getElementById('accountNumberField').style.display = 'block';
+  } else {
+    document.getElementById('accountNumberField').style.display = 'none';
+  }
+
+  document.getElementById('customer-info').style.display = 'block';
+
+  // Disable uploads if KYC accepted or rejected
+  if (data.kycStatus &&
+      (data.kycStatus.toLowerCase() === 'accepted' || data.kycStatus.toLowerCase() === 'rejected')) {
+    disableKycUploads(true);
+  } else {
+    disableKycUploads(false);
+  }
+
+  // Hide the whole KYC upload section if KYC is accepted or rejected
+  if (data.kycStatus &&
+      (data.kycStatus.toLowerCase() === 'accepted' || data.kycStatus.toLowerCase() === 'rejected')) {
+    document.querySelector('.kyc-section').style.display = 'none';
+  } else {
+    document.querySelector('.kyc-section').style.display = 'block';
+  }
+})
+
+
     .catch(err => {
       console.error('Error:', err);
       window.location.href = '/login';
@@ -305,6 +339,19 @@
     submitBtn.disabled = !(aadhaarInput.files.length > 0 && panInput.files.length > 0);
   }
 
+  function disableKycUploads(disable) {
+    aadhaarInput.disabled = disable;
+    panInput.disabled = disable;
+    submitBtn.disabled = disable;
+    if (disable) {
+      aadhaarInput.parentElement.classList.add('disabled');
+      panInput.parentElement.classList.add('disabled');
+    } else {
+      aadhaarInput.parentElement.classList.remove('disabled');
+      panInput.parentElement.classList.remove('disabled');
+    }
+  }
+
   submitBtn.addEventListener('click', () => {
     if (!customerId) {
       alert('Customer ID not found. Please refresh and try again.');
@@ -348,12 +395,14 @@
     .then(res => {
       if (!res.ok) throw new Error('Failed to upload PAN');
       alert('KYC documents uploaded successfully!');
+      disableKycUploads(true);
+
       aadhaarInput.value = '';
       panInput.value = '';
       updateFileInfo(aadhaarInput, aadhaarFileInfo, aadhaarFileName, aadhaarUploadText);
       updateFileInfo(panInput, panFileInfo, panFileName, panUploadText);
+
       submitBtn.textContent = 'Submit Documents';
-      submitBtn.disabled = true;
     })
     .catch(err => {
       alert('Error uploading documents: ' + err.message);

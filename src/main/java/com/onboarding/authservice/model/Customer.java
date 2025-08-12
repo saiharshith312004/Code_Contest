@@ -44,5 +44,8 @@ public class Customer {
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "user_id", nullable = false)
     private User user;
+    @OneToOne(mappedBy = "customer")
+    private Account account;
+
 
 }

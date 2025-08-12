@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.*;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import java.util.Base64;
 import java.util.Collections;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/debug")
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "controllers.test.enabled", havingValue = "true")
 public class DebugController {
 
     @Value("${auth.service.url}")

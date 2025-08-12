@@ -2,8 +2,10 @@ package com.onboarding.authservice.controller;
 
 import com.onboarding.authservice.dto.*;
 import com.onboarding.authservice.exception.InvalidTwoFactorCodeException;
+import com.onboarding.authservice.model.Account;
 import com.onboarding.authservice.model.Customer;
 import com.onboarding.authservice.model.User;
+import com.onboarding.authservice.repository.AccountRepository;
 import com.onboarding.authservice.repository.UserRepository;
 import com.onboarding.authservice.service.AuthService;
 import com.onboarding.authservice.service.JwtUtil;
@@ -29,6 +31,8 @@ public class AuthController {
     private final AuthService authService;
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
+
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -60,15 +64,12 @@ public class AuthController {
         }
     }
 
-
-
-    @GetMapping("/customers")
+    @GetMapping(value = "/customers", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Customer>> getAllCustomers() {
         List<Customer> customers = authService.getAllCustomers();
         return ResponseEntity.ok(customers);
     }
-
     @GetMapping("/validate")
     public ResponseEntity<?> validateUser(@RequestHeader("Authorization") String tokenHeader) {
         String token = tokenHeader.replace("Bearer ", "");
@@ -77,10 +78,18 @@ public class AuthController {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        Customer customer = user.getCustomer(); // assuming User ↔ Customer mapping exists
+        Customer customer = user.getCustomer();
 
         if (customer == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Customer profile not found");
+        }
+
+        String accountNumber = null;
+
+        if ("accepted".equalsIgnoreCase(customer.getKycStatus())) {
+            accountNumber = accountRepository.findByCustomerCustomerId(customer.getCustomerId())
+                    .map(Account::getAccountNumber)
+                    .orElse(null);
         }
 
         CustomerDashboardResponse response = CustomerDashboardResponse.builder()
@@ -92,10 +101,10 @@ public class AuthController {
                 .address(customer.getAddress())
                 .pan(customer.getPan())
                 .aadhaar(customer.getAadhaar())
-                .customerId(customer.getCustomerId())  // add this line
+                .kycStatus(customer.getKycStatus())
+                .customerId(customer.getCustomerId())
+                .accountNumber(accountNumber)
                 .build();
-
-
 
         return ResponseEntity.ok(response);
     }
