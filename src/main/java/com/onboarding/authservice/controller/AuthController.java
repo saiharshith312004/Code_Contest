@@ -60,9 +60,7 @@ public class AuthController {
         }
     }
 
-
-
-    @GetMapping("/customers")
+    @GetMapping(value = "/customers", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Customer>> getAllCustomers() {
         List<Customer> customers = authService.getAllCustomers();

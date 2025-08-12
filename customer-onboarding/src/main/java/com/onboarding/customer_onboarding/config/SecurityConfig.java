@@ -18,7 +18,12 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf().disable()
             .authorizeHttpRequests()
-            .requestMatchers("/api/kyc/verify/**").permitAll()  // Let AdminJwtFilter handle auth
+            .requestMatchers(
+                "/v3/api-docs/**",
+                "/swagger-ui.html",
+                "/swagger-ui/**",
+                "/api/kyc/verify/**"
+            ).permitAll()  // Let AdminJwtFilter handle auth and allow Swagger
             .anyRequest().permitAll();
         return http.build();
     }
