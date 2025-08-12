@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 /**
  * Controller for testing the Auth Service integration.
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/test/auth")
 @Slf4j
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "controllers.test.enabled", havingValue = "true")
 public class AuthTestController {
 
     private final AuthService authService;
