@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
+import com.onboarding.authservice.model.User;
 @Entity
 @Table(name = "CUSTOMERS")
 @Getter
@@ -14,9 +15,11 @@ import lombok.*;
 @Builder
 public class Customer {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "customer_id", insertable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "customer_seq_gen")
+    @SequenceGenerator(name = "customer_seq_gen", sequenceName = "CUSTOMER_SEQ", allocationSize = 1)
+    @Column(name = "customer_id", updatable = false, nullable = false)
     private Long customerId;
+
 
     @Column(name = "full_name", nullable = false)
     private String fullName;

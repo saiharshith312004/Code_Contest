@@ -8,6 +8,8 @@ import com.onboarding.authservice.repository.UserRepository;
 import com.onboarding.authservice.service.AuthService;
 import com.onboarding.authservice.service.JwtUtil;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -34,12 +36,21 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody JwtRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody JwtRequest request, HttpServletResponse response) {
         try {
-            JwtResponse response = authService.login(request);
-            return ResponseEntity.ok(response);
+            JwtResponse jwtResponse = authService.login(request);
+
+            // Create HttpOnly cookie for JWT
+            Cookie cookie = new Cookie("JWT_TOKEN", jwtResponse.getToken());
+            cookie.setHttpOnly(true);
+            cookie.setSecure(true);  // set to true if using HTTPS
+            cookie.setPath("/");
+            cookie.setMaxAge(24 * 60 * 60); // 1 day expiration
+            response.addCookie(cookie);
+
+            // Optionally, you can still return the token in the body
+            return ResponseEntity.ok(jwtResponse);
         } catch (BadCredentialsException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
         } catch (InvalidTwoFactorCodeException ex) {
@@ -48,7 +59,6 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred");
         }
     }
-
 
     @GetMapping(value = "/customers", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN')")
@@ -61,8 +71,28 @@ public class AuthController {
     public ResponseEntity<?> validateUser(@RequestHeader("Authorization") String tokenHeader) {
         String token = tokenHeader.replace("Bearer ", "");
         String username = jwtUtil.extractUsername(token);
+
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        return ResponseEntity.ok(new UserResponse(user.getUsername(), user.getRole()));
+
+        Customer customer = user.getCustomer(); // assuming User ↔ Customer mapping exists
+
+        if (customer == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Customer profile not found");
+        }
+
+        CustomerDashboardResponse response = CustomerDashboardResponse.builder()
+                .username(user.getUsername())
+                .fullName(customer.getFullName())
+                .dob(customer.getDob())
+                .email(customer.getEmail())
+                .phone(customer.getPhone())
+                .address(customer.getAddress())
+                .pan(customer.getPan())
+                .aadhaar(customer.getAadhaar())
+                .build();
+
+        return ResponseEntity.ok(response);
     }
+
 }

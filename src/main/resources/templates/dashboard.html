@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Dashboard</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #F5F5F7;
+      margin: 2rem;
+      color: #2E2E2E;
+    }
+    h1 {
+      color: #4B2E83;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      text-align: center;
+      font-size: 2.4rem;
+    }
+    .info, .kyc {
+      max-width: 480px;
+      margin: 0 auto;
+      background: white;
+      padding: 1.8rem 2rem;
+      border-radius: 10px;
+      box-shadow: 0 5px 20px rgba(75, 46, 131, 0.15);
+      border-top: 5px solid #4B2E83;
+      margin-bottom: 2rem;
+    }
+    .info p {
+      margin: 0.7rem 0;
+      font-size: 1.1rem;
+      line-height: 1.4;
+      color: #4B2E83;
+      font-weight: 600;
+    }
+    .info p span {
+      font-weight: 400;
+      color: #333;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: 600;
+      color: #4B2E83;
+    }
+    input[type="file"], button {
+      margin-top: 0.5rem;
+    }
+    button {
+      background: #4B2E83;
+      color: white;
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 1rem;
+    }
+    button:hover {
+      background: #3a2265;
+    }
+  </style>
+</head>
+<body>
+
+<h1 id="welcome-msg">Loading...</h1>
+
+<div class="info" id="customer-info" style="display:none;">
+  <p><strong>Full Name:</strong> <span id="fullName"></span></p>
+  <p><strong>Email:</strong> <span id="email"></span></p>
+  <p><strong>Phone:</strong> <span id="phone"></span></p>
+  <p><strong>Date of Birth:</strong> <span id="dob"></span></p>
+  <p><strong>Address:</strong> <span id="address"></span></p>
+  <p><strong>PAN:</strong> <span id="pan"></span></p>
+  <p><strong>Aadhaar:</strong> <span id="aadhaar"></span></p>
+</div>
+
+<div class="kyc" id="kyc-section" style="display:none;">
+  <h2>Upload KYC Documents</h2>
+  <form id="kycForm">
+    <label for="aadhaarFile">Aadhaar Document:</label>
+    <input type="file" id="aadhaarFile" name="aadhaar" accept=".pdf,.jpg,.png" required>
+
+    <label for="panFile">PAN Document:</label>
+    <input type="file" id="panFile" name="pan" accept=".pdf,.jpg,.png" required>
+
+    <button type="submit">Submit KYC</button>
+  </form>
+  <p id="kyc-status"></p>
+</div>
+
+<script>
+  const token = localStorage.getItem('token');
+  let customerId = null;
+
+  if (!token) {
+    window.location.href = '/login';
+  } else {
+    fetch('/api/auth/validate', {
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+    .then(response => {
+      if (!response.ok) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
+      return response.json();
+    })
+    .then(data => {
+      customerId = data.customerId;
+      document.getElementById('welcome-msg').textContent = `Welcome, ${data.fullName || data.username}`;
+      document.getElementById('fullName').textContent = data.fullName || '-';
+      document.getElementById('email').textContent = data.email || '-';
+      document.getElementById('phone').textContent = data.phone || '-';
+      document.getElementById('dob').textContent = data.dob || '-';
+      document.getElementById('address').textContent = data.address || '-';
+      document.getElementById('pan').textContent = data.pan || '-';
+      document.getElementById('aadhaar').textContent = data.aadhaar || '-';
+
+      document.getElementById('customer-info').style.display = 'block';
+      document.getElementById('kyc-section').style.display = 'block';
+    })
+    .catch(err => {
+      console.error('Error:', err);
+      window.location.href = '/login';
+    });
+  }
+
+  document.getElementById('kycForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (!customerId) {
+      alert('Customer ID not loaded yet.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('aadhaar', document.getElementById('aadhaarFile').files[0]);
+    formData.append('pan', document.getElementById('panFile').files[0]);
+
+    try {
+      const res = await fetch(`http://localhost:8090/api/kyc/upload/${customerId}`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: formData
+      });
+
+      if (res.ok) {
+        document.getElementById('kyc-status').textContent = 'KYC documents uploaded successfully!';
+        document.getElementById('kyc-status').style.color = 'green';
+      } else {
+        const errText = await res.text();
+        document.getElementById('kyc-status').textContent = 'Upload failed: ' + errText;
+        document.getElementById('kyc-status').style.color = 'red';
+      }
+    } catch (error) {
+      document.getElementById('kyc-status').textContent = 'Error uploading KYC documents.';
+      document.getElementById('kyc-status').style.color = 'red';
+    }
+  });
+</script>
+
+</body>
+</html>
+
+
+
