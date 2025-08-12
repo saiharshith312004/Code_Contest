@@ -15,11 +15,11 @@ import java.util.List;
 public class KycController {
     @Autowired
     private KycService kycService;
-    @PostMapping("/upload/{customerId}")
+    @PostMapping(value = "/upload/{customerId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> uploadKycDocument(
             @PathVariable Long customerId,
-            @RequestParam(value = "file", required = false) MultipartFile file,
-            @RequestParam("type") String docType) {
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            @RequestPart("type") String docType) {
         try {
             kycService.uploadDocument(customerId, file, docType);
             return ResponseEntity.status(HttpStatus.CREATED).body("KYC document uploaded successfully.");
