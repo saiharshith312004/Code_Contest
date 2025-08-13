@@ -8,16 +8,38 @@
             font-family: Arial, sans-serif;
             background-color: #f5f5f7;
             margin: 0;
-            padding: 2rem;
         }
-        h1 {
-            text-align: center;
+        .navbar {
+            background-color: #4B2E83;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .logout-btn {
+            background-color: #E03C3C;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .logout-btn:hover {
+            background-color: #b33131;
+        }
+        h2 {
             color: #4B2E83;
-            margin-bottom: 2rem;
         }
         section {
             max-width: 900px;
             margin: auto;
+            padding: 2rem;
         }
         .request-card {
             background: white;
@@ -86,7 +108,10 @@
 </head>
 <body>
 
-<h1>Admin KYC Dashboard</h1>
+<div class="navbar">
+    <h1>Admin KYC Dashboard</h1>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+</div>
 
 <div id="loading">Loading KYC requests...</div>
 
@@ -113,21 +138,18 @@
             document.getElementById('pending-container').innerHTML = '';
 
             fetch(`${baseUrl}/requests`, {
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                }
+                headers: { 'Authorization': 'Bearer ' + token }
             })
             .then(res => {
                 if (!res.ok) throw new Error("Failed to fetch requests");
-                return res.json();
+                return res.json().catch(() => []);
             })
             .then(data => {
                 document.getElementById('loading').style.display = 'none';
-
-                const pendingList = Array.isArray(data) ? data : [];
+                const pendingList = Array.isArray(data) ? data : (data ? [data] : []);
                 const container = document.getElementById('pending-container');
 
-                if (pendingList.length === 0) {
+                if (!pendingList.length) {
                     container.innerHTML = "<p>No pending requests found.</p>";
                     return;
                 }
@@ -136,9 +158,8 @@
                     const div = document.createElement('div');
                     div.className = 'request-card';
 
-                    // Find Aadhaar & PAN docs in documents array
                     const aadhaarDoc = cust.documents?.find(doc => doc.documentType?.trim().toUpperCase() === 'AADHAAR');
-const panDoc = cust.documents?.find(doc => doc.documentType?.trim().toUpperCase() === 'PAN');
+                    const panDoc = cust.documents?.find(doc => doc.documentType?.trim().toUpperCase() === 'PAN');
 
                     const aadhaarLinks = aadhaarDoc ? `
                         <a class="view-btn" href="${baseUrl}/download/${aadhaarDoc.documentId}" target="_blank">View</a>
@@ -150,31 +171,27 @@ const panDoc = cust.documents?.find(doc => doc.documentType?.trim().toUpperCase(
                         <a class="download-btn" href="${baseUrl}/download/${panDoc.documentId}" download="${panDoc.fileName}">Download</a>
                     ` : 'N/A';
 
-                   div.innerHTML = `
-    <p><strong>Customer ID:</strong> ${cust.customerId || 'N/A'}</p>
-    <p><strong>Name:</strong> ${cust.fullName || 'N/A'}</p>
-    <p><strong>DOB:</strong> ${cust.dob || 'N/A'}</p>
-    <p><strong>Aadhaar Number:</strong> ${cust.aadhaar || 'N/A'}</p>
-    <p><strong>Aadhaar Documents:</strong> ${aadhaarLinks}</p>
-    <p><strong>PAN Number:</strong> ${cust.pan || 'N/A'}</p>
-    <p><strong>PAN Documents:</strong> ${panLinks}</p>
-    <p><strong>Address:</strong> ${cust.address || 'N/A'}</p>
-    <p><strong>KYC Status:</strong> ${cust.kycStatus || 'N/A'}</p>
-    <div>
-        <button class="approve-btn" onclick="approve(${cust.customerId})">✅ Approve</button>
-        <button class="decline-btn" onclick="decline(${cust.customerId})">❌ Decline</button>
-    </div>
-`;
-
-
+                    div.innerHTML = `
+                        <p><strong>Customer ID:</strong> ${cust.customerId || 'N/A'}</p>
+                        <p><strong>Name:</strong> ${cust.fullName || 'N/A'}</p>
+                        <p><strong>DOB:</strong> ${cust.dob || 'N/A'}</p>
+                        <p><strong>Aadhaar Number:</strong> ${cust.aadhaar || 'N/A'}</p>
+                        <p><strong>Aadhaar Documents:</strong> ${aadhaarLinks}</p>
+                        <p><strong>PAN Number:</strong> ${cust.pan || 'N/A'}</p>
+                        <p><strong>PAN Documents:</strong> ${panLinks}</p>
+                        <p><strong>Address:</strong> ${cust.address || 'N/A'}</p>
+                        <p><strong>KYC Status:</strong> ${cust.kycStatus || 'N/A'}</p>
+                        <div>
+                            <button class="approve-btn" onclick="approve(${cust.customerId})">✅ Approve</button>
+                            <button class="decline-btn" onclick="decline(${cust.customerId})">❌ Decline</button>
+                        </div>
+                    `;
                     container.appendChild(div);
                 });
             })
-            .catch(error => {
+            .catch(() => {
                 document.getElementById('loading').style.display = 'none';
-                const errorMessage = document.getElementById('error-message');
-                errorMessage.textContent = 'Error loading requests: ' + error.message;
-                errorMessage.style.display = 'block';
+                document.getElementById('pending-container').innerHTML = "<p>No pending requests found.</p>";
             });
         }
 
@@ -198,6 +215,11 @@ const panDoc = cust.documents?.find(doc => doc.documentType?.trim().toUpperCase(
                 .then(() => fetchPendingRequests())
                 .catch(err => alert('Failed to decline: ' + err.message));
             }
+        };
+
+        window.logout = function() {
+            localStorage.removeItem('token');
+            window.location.href = '/admin-login';
         };
 
         fetchPendingRequests();
